@@ -183,8 +183,10 @@ export class FillyModel extends THREE.Group {
 
     // Cartoon ink eyes by default. The optional iris only touches materials
     // owned by this model; caller-supplied maps retain their own lifecycle.
-    this.eyeTexture = opts.irisTexture === true && this.ownsMaterials.has(mats.eye)
-      ? ensureEyeTexture(mats) : null;
+    this.eyeTexture =
+      opts.irisTexture === true && this.ownsMaterials.has(mats.eye)
+        ? ensureEyeTexture(mats)
+        : null;
     this.eyeL = buildEye(-1, mats);
     this.eyeR = buildEye(1, mats);
     const cheekL = buildCheek(-1, mats);
@@ -201,8 +203,18 @@ export class FillyModel extends THREE.Group {
 
     // The pads and hands cast a soft seam onto the shell, grounding the
     // separate pieces as a single sculpted toy under the studio key light.
-    for (const part of [body, plateSurface, sideL, sideR, footL, footR,
-      this.earL.tile, this.earR.tile, this.armL.hand, this.armR.hand]) {
+    for (const part of [
+      body,
+      plateSurface,
+      sideL,
+      sideR,
+      footL,
+      footR,
+      this.earL.tile,
+      this.earR.tile,
+      this.armL.hand,
+      this.armR.hand,
+    ]) {
       part.castShadow = true;
       part.receiveShadow = true;
     }
@@ -283,6 +295,7 @@ export class FillyModel extends THREE.Group {
     const lookX = clampKey("eyeLookX", pose.eyeLookX);
     const lookY = clampKey("eyeLookY", pose.eyeLookY);
     const eyeScale = clampKey("eyeScale", pose.eyeScale);
+    const dizzy = clampKey("swirl", pose.swirl);
     applyEyePose(
       this.eyeL,
       clampKey("eyeOpenL", pose.eyeOpenL),
@@ -292,6 +305,7 @@ export class FillyModel extends THREE.Group {
       eyeScale,
       clampKey("eyeWhite", pose.eyeWhite),
       clampKey("browL", pose.browL),
+      dizzy,
     );
     applyEyePose(
       this.eyeR,
@@ -302,6 +316,7 @@ export class FillyModel extends THREE.Group {
       eyeScale,
       clampKey("eyeWhite", pose.eyeWhite),
       clampKey("browR", pose.browR),
+      dizzy,
     );
 
     // Legacy pose values must not reveal the removed blush in any expression.
@@ -319,6 +334,7 @@ export class FillyModel extends THREE.Group {
       clampKey("bubbles", pose.bubbles),
       clampKey("waves", pose.waves),
       clampKey("sparks", pose.sparks),
+      clampKey("swirl", pose.swirl),
       time,
       pose.mouthRound < 0.65 && pose.sparks > 0 && pose.mouthOpen > 0.1,
     );

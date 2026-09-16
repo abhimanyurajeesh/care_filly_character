@@ -104,7 +104,7 @@ const SURPRISED: Readonly<FillyPose> = Object.freeze({
 });
 
 /** Woozy, just-spun-around look: flat dazed eyes, small "o" mouth, drooped
- *  ears. The circular eye-wobble and body sway live in the overlay. */
+ *  ears, and a spinning loop-the-loop with two stars overhead. */
 const DIZZY: Readonly<FillyPose> = Object.freeze({
   ...DEFAULT_POSE,
   eyeArc: 0,
@@ -118,7 +118,7 @@ const DIZZY: Readonly<FillyPose> = Object.freeze({
   earL: -0.08,
   earR: -0.08,
   bodyPitch: 0.02,
-  sparks: 0.6,
+  swirl: 1,
 });
 
 const SLEEPY: Readonly<FillyPose> = Object.freeze({

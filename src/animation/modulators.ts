@@ -194,13 +194,12 @@ export class StateModulator {
       }
       case "dizzy": {
         // Eyes trace a circle (the classic "seeing stars" spin); the body
-        // sways more slowly underneath, like it's still catching balance.
+        // only sways gently underneath so the spin stays the focal point.
         const spin = TAU * 1.2 * t;
         pose.eyeLookX += 0.55 * Math.cos(spin) * w;
         pose.eyeLookY += 0.4 * Math.sin(spin) * w;
-        pose.bodyRoll += 0.09 * Math.sin(TAU * 0.6 * T) * w;
-        pose.bodyYaw += 0.05 * Math.cos(TAU * 0.5 * T) * w;
-        pose.bodyY += 0.015 * Math.sin(TAU * 1.5 * t) * w;
+        pose.bodyRoll += 0.03 * Math.sin(TAU * 0.5 * T) * w;
+        pose.bodyYaw += 0.015 * Math.cos(TAU * 0.4 * T) * w;
         break;
       }
     }

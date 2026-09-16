@@ -92,6 +92,8 @@ export interface FillyPose {
   bubbles: number;
   waves: number;
   sparks: number;
+  /** Spinning loop-the-loop with two stars, for a dazed/dizzy spell. */
+  swirl: number;
 }
 
 export type PoseKey = keyof FillyPose;
@@ -126,6 +128,7 @@ export const DEFAULT_POSE: Readonly<FillyPose> = Object.freeze({
   bubbles: 0,
   waves: 0,
   sparks: 0,
+  swirl: 0,
 });
 
 export const POSE_KEYS = Object.keys(DEFAULT_POSE) as PoseKey[];
@@ -167,6 +170,7 @@ export const POSE_BOUNDS: Readonly<Record<PoseKey, readonly [number, number]>> =
     bubbles: [0, 1],
     waves: [0, 1],
     sparks: [0, 1],
+    swirl: [0, 1],
   });
 
 export function clampPose(pose: FillyPose): FillyPose {
