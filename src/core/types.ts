@@ -12,6 +12,7 @@ export const FILLY_STATES = [
   "thinking",
   "surprised",
   "sleepy",
+  "dizzy",
 ] as const;
 
 export type FillyState = (typeof FILLY_STATES)[number];

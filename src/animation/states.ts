@@ -103,6 +103,24 @@ const SURPRISED: Readonly<FillyPose> = Object.freeze({
   bodyPitch: -0.05,
 });
 
+/** Woozy, just-spun-around look: flat dazed eyes, small "o" mouth, drooped
+ *  ears. The circular eye-wobble and body sway live in the overlay. */
+const DIZZY: Readonly<FillyPose> = Object.freeze({
+  ...DEFAULT_POSE,
+  eyeArc: 0,
+  eyeScale: 0.95,
+  mouthOpen: 0.3,
+  mouthRound: 1,
+  mouthWide: 0.7,
+  mouthSmile: -0.1,
+  browL: -0.4,
+  browR: -0.4,
+  earL: -0.08,
+  earR: -0.08,
+  bodyPitch: 0.02,
+  sparks: 0.6,
+});
+
 const SLEEPY: Readonly<FillyPose> = Object.freeze({
   ...DEFAULT_POSE,
   eyeOpenL: 0,
@@ -136,6 +154,7 @@ export const STATE_TARGETS: Readonly<Record<FillyState, Readonly<FillyPose>>> =
     thinking: THINKING,
     surprised: SURPRISED,
     sleepy: SLEEPY,
+    dizzy: DIZZY,
   });
 
 /** Per-state multiplier applied to pointer follow (0 = disabled). */
@@ -148,6 +167,7 @@ export const POINTER_FOLLOW_WEIGHT: Readonly<Record<FillyState, number>> =
     thinking: 0.5,
     surprised: 0.4,
     sleepy: 0,
+    dizzy: 0,
   });
 
 /** True when the state's eyes are nominally open (blink overlay applies). */
