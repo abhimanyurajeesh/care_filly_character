@@ -47,7 +47,8 @@ function spiralGeometry(turns: number, rStart: number, rEnd: number): THREE.Tube
     if (prev) curve.add(new THREE.LineCurve3(prev, point));
     prev = point;
   }
-  return new THREE.TubeGeometry(curve, segments, 0.007, 5, false);
+  // Thick stroke so the spiral still reads clearly at small (FAB-sized) renders.
+  return new THREE.TubeGeometry(curve, segments, 0.010, 5, false);
 }
 
 // ── eyes ────────────────────────────────────────────────────────────────────
@@ -183,6 +184,7 @@ export function buildEye(side: -1 | 1, materials: FillyMaterials): EyeRig {
   sclera.scale.set(0.139, 0.164, 0.004);
   sclera.position.set(-0.001, 0, 0.003);
   sclera.visible = illustrated;
+  sclera.userData.baseVisible = illustrated;
   lid.add(sclera);
 
   const ball = new THREE.Mesh(illustrated ? unit : getCartoonEyeGeometry(side), materials.eye);
@@ -227,11 +229,14 @@ export function buildEye(side: -1 | 1, materials: FillyMaterials): EyeRig {
   group.add(arc);
 
   const spiralMaterial = materials.eyeHighlight.clone();
+  spiralMaterial.color.set(PALETTE.eyeLid);
   spiralMaterial.transparent = true;
   spiralMaterial.opacity = 0;
-  const spiral = new THREE.Mesh(spiralGeometry(1.6, 0.018, 0.078), spiralMaterial);
+  spiralMaterial.depthTest = false;
+  const spiral = new THREE.Mesh(spiralGeometry(1.6, 0.02, 0.098), spiralMaterial);
   spiral.name = "dizzySpiral";
   spiral.position.set(0.009, 0, 0.016);
+  spiral.renderOrder = 1;
   spiral.visible = false;
   lid.add(spiral);
 
@@ -293,8 +298,12 @@ export function applyEyePose(
   pin.position.set(0.031 + gx, 0.025 + gy, 0.013);
   soft.position.set(-0.022 + gx, -0.12 + gy, 0.011);
 
-  // The dizzy spiral replaces the normal highlights entirely while active.
-  const hideForSpiral = dizzy > 0.02;
+  // The dizzy spiral replaces the eye while it's clearly visible; the ball
+  // returns well before the spiral fully fades (its spring decays slowly),
+  // so leaving "dizzy" crossfades instead of leaving the eye briefly blank.
+  const hideForSpiral = dizzy > 0.5;
+  eye.ball.visible = !hideForSpiral;
+  eye.sclera.visible = (eye.sclera.userData.baseVisible as boolean) && !hideForSpiral;
   for (const highlight of eye.highlights) {
     highlight.visible = (highlight.userData.baseVisible as boolean) && !hideForSpiral;
   }
