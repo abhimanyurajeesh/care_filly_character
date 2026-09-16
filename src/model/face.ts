@@ -48,7 +48,7 @@ function spiralGeometry(turns: number, rStart: number, rEnd: number): THREE.Tube
     prev = point;
   }
   // Thick stroke so the spiral still reads clearly at small (FAB-sized) renders.
-  return new THREE.TubeGeometry(curve, segments, 0.010, 5, false);
+  return new THREE.TubeGeometry(curve, segments, 0.013, 5, false);
 }
 
 // ── eyes ────────────────────────────────────────────────────────────────────
@@ -233,7 +233,7 @@ export function buildEye(side: -1 | 1, materials: FillyMaterials): EyeRig {
   spiralMaterial.transparent = true;
   spiralMaterial.opacity = 0;
   spiralMaterial.depthTest = false;
-  const spiral = new THREE.Mesh(spiralGeometry(1.6, 0.02, 0.098), spiralMaterial);
+  const spiral = new THREE.Mesh(spiralGeometry(1.6, 0.029, 0.138), spiralMaterial);
   spiral.name = "dizzySpiral";
   spiral.position.set(0.009, 0, 0.016);
   spiral.renderOrder = 1;
