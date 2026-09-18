@@ -144,6 +144,20 @@ const SLEEPY: Readonly<FillyPose> = Object.freeze({
   cheek: 0.4,
 });
 
+/** Purposeful little waddle: forward lean, determined smile, arms and feet
+ *  left near neutral — the overlay drives the actual gait (bounce, arm
+ *  swing, foot lift, side-to-side roll). */
+const WALKING: Readonly<FillyPose> = Object.freeze({
+  ...DEFAULT_POSE,
+  bodyPitch: 0.05,
+  mouthOpen: 0.08,
+  mouthSmile: 0.85,
+  mouthWide: 1.05,
+  earL: 0.1,
+  earR: 0.1,
+  cheek: 0.6,
+});
+
 /** Static target pose for every state. */
 export const STATE_TARGETS: Readonly<Record<FillyState, Readonly<FillyPose>>> =
   Object.freeze({
@@ -155,6 +169,7 @@ export const STATE_TARGETS: Readonly<Record<FillyState, Readonly<FillyPose>>> =
     surprised: SURPRISED,
     sleepy: SLEEPY,
     dizzy: DIZZY,
+    walking: WALKING,
   });
 
 /** Per-state multiplier applied to pointer follow (0 = disabled). */
@@ -168,6 +183,7 @@ export const POINTER_FOLLOW_WEIGHT: Readonly<Record<FillyState, number>> =
     surprised: 0.4,
     sleepy: 0,
     dizzy: 0,
+    walking: 0.15,
   });
 
 /** True when the state's eyes are nominally open (blink overlay applies). */

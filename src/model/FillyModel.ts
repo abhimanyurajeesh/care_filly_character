@@ -25,6 +25,7 @@ import {
 import { getBodyGeometry, getPlateSurfaceGeometry } from "./geometry";
 import {
   FEET_BOTTOM,
+  FOOT,
   applyArmPose,
   applyEarPose,
   buildArm,
@@ -290,6 +291,16 @@ export class FillyModel extends THREE.Group {
       clampKey("zzz", pose.zzz),
     );
     applyArmPose(this.armR, clampKey("armR", pose.armR), 0);
+
+    // Mid-step, a foot lifts up and forward a little, then plants back down.
+    const footLiftL = clampKey("footL", pose.footL);
+    const footLiftR = clampKey("footR", pose.footR);
+    parts.footL.position.y = FOOT.y + 0.09 * footLiftL;
+    parts.footL.position.z = FOOT.z + 0.06 * footLiftL;
+    parts.footL.rotation.x = -0.5 * footLiftL;
+    parts.footR.position.y = FOOT.y + 0.09 * footLiftR;
+    parts.footR.position.z = FOOT.z + 0.06 * footLiftR;
+    parts.footR.rotation.x = -0.5 * footLiftR;
 
     const arc = clampKey("eyeArc", pose.eyeArc);
     const lookX = clampKey("eyeLookX", pose.eyeLookX);

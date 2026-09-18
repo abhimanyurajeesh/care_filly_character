@@ -202,6 +202,24 @@ export class StateModulator {
         pose.bodyYaw += 0.015 * Math.cos(TAU * 0.4 * T) * w;
         break;
       }
+      case "walking": {
+        // One full left-right stride every WALK_PERIOD seconds. Free-running
+        // (T, not t) since the gait should never reset mid-stride.
+        const WALK_PERIOD = 0.5;
+        const cycle = TAU * (T / WALK_PERIOD);
+        const bounce = Math.abs(Math.sin(cycle)); // a little hop each step
+        pose.bodyY += 0.05 * bounce * w;
+        pose.bodyScaleY += (0.02 - 0.05 * bounce) * w;
+        pose.bodyScaleX += 0.03 * bounce * w;
+        pose.bodyRoll += 0.12 * Math.sin(cycle) * w; // goofy side-to-side waddle
+        pose.bodyYaw += 0.04 * Math.sin(cycle * 0.5) * w;
+        pose.armL += 0.55 * Math.sin(cycle + Math.PI) * w;
+        pose.armR += 0.55 * Math.sin(cycle) * w;
+        pose.footL += Math.max(0, Math.sin(cycle)) * w;
+        pose.footR += Math.max(0, Math.sin(cycle + Math.PI)) * w;
+        pose.mouthWide += 0.05 * bounce * w;
+        break;
+      }
     }
   }
 }

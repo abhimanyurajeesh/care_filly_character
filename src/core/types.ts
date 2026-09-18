@@ -13,6 +13,7 @@ export const FILLY_STATES = [
   "surprised",
   "sleepy",
   "dizzy",
+  "walking",
 ] as const;
 
 export type FillyState = (typeof FILLY_STATES)[number];
@@ -94,6 +95,11 @@ export interface FillyPose {
   sparks: number;
   /** Spinning loop-the-loop with two stars, for a dazed/dizzy spell. */
   swirl: number;
+
+  // ── walk cycle ──────────────────────────────────────────────────────────
+  /** 0 planted .. 1 fully lifted mid-step. */
+  footL: number;
+  footR: number;
 }
 
 export type PoseKey = keyof FillyPose;
@@ -129,6 +135,8 @@ export const DEFAULT_POSE: Readonly<FillyPose> = Object.freeze({
   waves: 0,
   sparks: 0,
   swirl: 0,
+  footL: 0,
+  footR: 0,
 });
 
 export const POSE_KEYS = Object.keys(DEFAULT_POSE) as PoseKey[];
@@ -171,6 +179,8 @@ export const POSE_BOUNDS: Readonly<Record<PoseKey, readonly [number, number]>> =
     waves: [0, 1],
     sparks: [0, 1],
     swirl: [0, 1],
+    footL: [0, 1],
+    footR: [0, 1],
   });
 
 export function clampPose(pose: FillyPose): FillyPose {

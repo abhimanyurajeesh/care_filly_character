@@ -3,6 +3,7 @@ import {
   Cloud,
   Heart,
   Moon,
+  PersonSimpleWalk,
   Sparkle,
   Star,
   WarningCircle,
@@ -22,6 +23,7 @@ const EXPRESSION_ICONS: Record<SheetFrame["id"], Icon> = {
   surprised: WarningCircle,
   sleepy: Moon,
   dizzy: Sparkle,
+  walking: PersonSimpleWalk,
 };
 
 export function ExpressionIcon({
