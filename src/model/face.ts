@@ -357,7 +357,7 @@ export function placeOnBody(
 }
 
 /** Attach a facial feature to the insert, following its local tangent. */
-function placeOnPlate(obj: THREE.Object3D, x: number, y: number, offset: number): void {
+export function placeOnPlate(obj: THREE.Object3D, x: number, y: number, offset: number): void {
   const step = 0.002;
   const dzdx = (plateZ(x + step, y) - plateZ(x - step, y)) / (2 * step);
   const dzdy = (plateZ(x, y + step) - plateZ(x, y - step)) / (2 * step);
