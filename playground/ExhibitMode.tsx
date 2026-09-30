@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import {
   ArrowCounterClockwise,
   ArrowUpRight,
@@ -23,6 +30,7 @@ import {
   EXHIBIT_CUES,
   EXHIBIT_DURATION_MS,
   INITIAL_EXHIBIT_PLAYBACK,
+  chooseExhibitVoice,
   exhibitReducer,
   startExhibitCue,
   startExhibitVideo,
@@ -30,7 +38,11 @@ import {
 } from "./exhibitPlayback";
 import "./exhibit.css";
 
-function ExhibitVideo({ media, playing, onUnavailable }: {
+function ExhibitVideo({
+  media,
+  playing,
+  onUnavailable,
+}: {
   media: ExhibitMedia;
   playing: boolean;
   onUnavailable: () => void;
@@ -63,8 +75,15 @@ function ExhibitVideo({ media, playing, onUnavailable }: {
 
 export function ExhibitMode() {
   const rootRef = useRef<HTMLElement>(null);
-  const [playback, dispatch] = useReducer(exhibitReducer, INITIAL_EXHIBIT_PLAYBACK);
+  const [playback, dispatch] = useReducer(
+    exhibitReducer,
+    INITIAL_EXHIBIT_PLAYBACK,
+  );
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState<
+    SpeechSynthesisVoice[]
+  >([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState("");
   const [speaking, setSpeaking] = useState(false);
   const [visible, setVisible] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
@@ -72,9 +91,29 @@ export function ExhibitMode() {
   const cue = EXHIBIT_CUES[playback.cueIndex];
   const media = cue.media;
   const chapter = EXHIBIT_CHAPTERS[cue.chapterIndex];
-  const canSpeak = typeof window.speechSynthesis !== "undefined"
-    && typeof window.SpeechSynthesisUtterance !== "undefined";
-  const canFullscreen = typeof document !== "undefined" && document.fullscreenEnabled;
+  const canSpeak =
+    typeof window.speechSynthesis !== "undefined" &&
+    typeof window.SpeechSynthesisUtterance !== "undefined";
+  const canFullscreen =
+    typeof document !== "undefined" && document.fullscreenEnabled;
+  const selectedVoice =
+    availableVoices.find((voice) => voice.voiceURI === selectedVoiceURI) ??
+    chooseExhibitVoice(availableVoices);
+
+  useEffect(() => {
+    if (!canSpeak) return;
+    const updateVoices = () => {
+      setAvailableVoices(
+        window.speechSynthesis
+          .getVoices()
+          .filter((voice) => voice.lang.startsWith("en")),
+      );
+    };
+    updateVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", updateVoices);
+    return () =>
+      window.speechSynthesis.removeEventListener("voiceschanged", updateVoices);
+  }, [canSpeak]);
 
   const onMediaUnavailable = useCallback(() => {
     setNotice("Demo unavailable. Continuing the presentation.");
@@ -84,8 +123,10 @@ export function ExhibitMode() {
   useEffect(() => {
     const previousTitle = document.title;
     document.title = "CARE, with Filly | Open Healthcare Network";
-    const onVisibility = () => setVisible(document.visibilityState === "visible");
-    const onFullscreen = () => setFullscreen(Boolean(document.fullscreenElement));
+    const onVisibility = () =>
+      setVisible(document.visibilityState === "visible");
+    const onFullscreen = () =>
+      setFullscreen(Boolean(document.fullscreenElement));
     onVisibility();
     onFullscreen();
     document.addEventListener("visibilitychange", onVisibility);
@@ -105,23 +146,32 @@ export function ExhibitMode() {
       onSpeakingChange: setSpeaking,
       onVoiceUnavailable: () => {
         setVoiceEnabled(false);
-        setNotice("Voice unavailable. The captioned presentation will continue.");
+        setNotice(
+          "Voice unavailable. The captioned presentation will continue.",
+        );
       },
-      speech: voiceEnabled && canSpeak ? {
-        synthesis: window.speechSynthesis,
-        createUtterance: (text) => new SpeechSynthesisUtterance(text),
-      } : undefined,
+      speech:
+        voiceEnabled && canSpeak
+          ? {
+              synthesis: window.speechSynthesis,
+              createUtterance: (text) => new SpeechSynthesisUtterance(text),
+              voice: selectedVoice,
+            }
+          : undefined,
     });
-  }, [playback, voiceEnabled, visible, canSpeak]);
+  }, [playback, voiceEnabled, visible, canSpeak, selectedVoice]);
 
   useEffect(() => {
     if (!playback.playing || !visible || !("wakeLock" in navigator)) return;
     let disposed = false;
     let lock: WakeLockSentinel | undefined;
-    void navigator.wakeLock.request("screen").then((acquired) => {
-      if (disposed) void acquired.release().catch(() => undefined);
-      else lock = acquired;
-    }).catch(() => undefined);
+    void navigator.wakeLock
+      .request("screen")
+      .then((acquired) => {
+        if (disposed) void acquired.release().catch(() => undefined);
+        else lock = acquired;
+      })
+      .catch(() => undefined);
     return () => {
       disposed = true;
       void lock?.release().catch(() => undefined);
@@ -139,8 +189,15 @@ export function ExhibitMode() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
-      if (event.target instanceof HTMLElement && event.target.closest("button, a, input, select, textarea, [contenteditable]")) return;
+      if (event.altKey || event.ctrlKey || event.metaKey || event.repeat)
+        return;
+      if (
+        event.target instanceof HTMLElement &&
+        event.target.closest(
+          "button, a, input, select, textarea, [contenteditable]",
+        )
+      )
+        return;
       switch (event.key.toLowerCase()) {
         case " ":
           event.preventDefault();
@@ -150,7 +207,12 @@ export function ExhibitMode() {
         case "arrowleft": {
           event.preventDefault();
           const direction = event.key === "ArrowRight" ? 1 : -1;
-          dispatch({ type: "chapter", chapterIndex: (cue.chapterIndex + direction + EXHIBIT_CHAPTERS.length) % EXHIBIT_CHAPTERS.length });
+          dispatch({
+            type: "chapter",
+            chapterIndex:
+              (cue.chapterIndex + direction + EXHIBIT_CHAPTERS.length) %
+              EXHIBIT_CHAPTERS.length,
+          });
           break;
         }
         case "r":
@@ -172,7 +234,12 @@ export function ExhibitMode() {
   }, [cue.chapterIndex, canSpeak, canFullscreen, toggleFullscreen]);
 
   function moveChapter(direction: number) {
-    dispatch({ type: "chapter", chapterIndex: (cue.chapterIndex + direction + EXHIBIT_CHAPTERS.length) % EXHIBIT_CHAPTERS.length });
+    dispatch({
+      type: "chapter",
+      chapterIndex:
+        (cue.chapterIndex + direction + EXHIBIT_CHAPTERS.length) %
+        EXHIBIT_CHAPTERS.length,
+    });
   }
 
   return (
@@ -190,12 +257,21 @@ export function ExhibitMode() {
           <span>CARE</span>
         </a>
         <span className="exhibit-network">Open Healthcare Network</span>
-        <a className="exhibit-site" href="https://ohc.network/" target="_blank" rel="noopener noreferrer">
+        <a
+          className="exhibit-site"
+          href="https://ohc.network/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           ohc.network <ArrowUpRight size={18} aria-hidden="true" />
         </a>
       </header>
 
-      <section className="exhibit-stage" aria-labelledby="exhibit-title" data-media={Boolean(media)}>
+      <section
+        className="exhibit-stage"
+        aria-labelledby="exhibit-title"
+        data-media={Boolean(media)}
+      >
         <div className="exhibit-story" key={media?.src ?? chapter.id}>
           <div className="exhibit-chapter-heading">
             <span>{String(cue.chapterIndex + 1).padStart(2, "0")}</span>
@@ -215,9 +291,15 @@ export function ExhibitMode() {
             })}
           </ul>
         </div>
-        <div className="exhibit-presenter" role="img" aria-label="Filly, the CARE mascot">
+        <div
+          className="exhibit-presenter"
+          role="img"
+          aria-label="Filly, the CARE mascot"
+        >
           <FillyCharacter
-            state={speaking && playback.playing ? "talking" : chapter.expression}
+            state={
+              speaking && playback.playing ? "talking" : chapter.expression
+            }
             size="100%"
             style={{ width: "100%", height: "100%" }}
             followPointer={false}
@@ -226,9 +308,16 @@ export function ExhibitMode() {
             dpr={[1, 1.5]}
           />
         </div>
-        <span className="exhibit-presenter-name" aria-hidden="true">Your friend, Filly.</span>
+        <span className="exhibit-presenter-name" aria-hidden="true">
+          Your friend, Filly.
+        </span>
         {media && (
-          <figure className="exhibit-media" style={{ "--media-aspect": media.aspectRatio ?? 16 / 9 } as CSSProperties}>
+          <figure
+            className="exhibit-media"
+            style={
+              { "--media-aspect": media.aspectRatio ?? 16 / 9 } as CSSProperties
+            }
+          >
             <div className="exhibit-media-screen">
               <ExhibitVideo
                 key={media.src}
@@ -239,8 +328,13 @@ export function ExhibitMode() {
             </div>
             <figcaption>
               <span>CARE in action</span>
-              <a href="https://deck.ohc.network/" target="_blank" rel="noopener noreferrer">
-                OHC deck, slide {media.sourceSlide} <ArrowUpRight size={14} aria-hidden="true" />
+              <a
+                href="https://deck.ohc.network/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                OHC deck, slide {media.sourceSlide}{" "}
+                <ArrowUpRight size={14} aria-hidden="true" />
               </a>
             </figcaption>
           </figure>
@@ -252,27 +346,55 @@ export function ExhibitMode() {
           <Waveform size={24} weight="regular" />
           <span>Filly</span>
         </div>
-        <p id="exhibit-caption" className="exhibit-caption" aria-live={voiceEnabled ? "off" : "polite"} aria-atomic="true">
+        <p
+          id="exhibit-caption"
+          className="exhibit-caption"
+          aria-live={voiceEnabled ? "off" : "polite"}
+          aria-atomic="true"
+        >
           <span key={playback.cueIndex}>{cue.text}</span>
         </p>
-        <a className="exhibit-qr" href="https://ohc.network/" target="_blank" rel="noopener noreferrer" aria-label="Explore CARE at Open Healthcare Network">
-          <QRCodeSVG value="https://ohc.network/" size={76} marginSize={2} fgColor="#183f30" aria-hidden="true" />
-          <span>Explore CARE <ArrowUpRight size={14} aria-hidden="true" /></span>
+        <a
+          className="exhibit-qr"
+          href="https://ohc.network/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Explore CARE at Open Healthcare Network"
+        >
+          <QRCodeSVG
+            value="https://ohc.network/"
+            size={76}
+            marginSize={2}
+            fgColor="#183f30"
+            aria-hidden="true"
+          />
+          <span>
+            Explore CARE <ArrowUpRight size={14} aria-hidden="true" />
+          </span>
         </a>
       </section>
 
       <footer className="exhibit-footer">
         <nav className="exhibit-chapters" aria-label="Exhibit chapters">
           {EXHIBIT_CHAPTERS.map((item, chapterIndex) => {
-            const firstCue = EXHIBIT_CUES.findIndex((entry) => entry.chapterIndex === chapterIndex);
-            const cueCount = EXHIBIT_CUES.filter((entry) => entry.chapterIndex === chapterIndex).length;
-            const completed = Math.min(1, Math.max(0, (playback.cueIndex - firstCue) / cueCount));
+            const firstCue = EXHIBIT_CUES.findIndex(
+              (entry) => entry.chapterIndex === chapterIndex,
+            );
+            const cueCount = EXHIBIT_CUES.filter(
+              (entry) => entry.chapterIndex === chapterIndex,
+            ).length;
+            const completed = Math.min(
+              1,
+              Math.max(0, (playback.cueIndex - firstCue) / cueCount),
+            );
             return (
               <button
                 key={item.id}
                 type="button"
                 className="exhibit-chapter"
-                aria-current={chapterIndex === cue.chapterIndex ? "step" : undefined}
+                aria-current={
+                  chapterIndex === cue.chapterIndex ? "step" : undefined
+                }
                 aria-label={item.label}
                 title={item.label}
                 onClick={() => dispatch({ type: "chapter", chapterIndex })}
@@ -283,39 +405,103 @@ export function ExhibitMode() {
                     <span
                       key={`${playback.cueIndex}-${voiceEnabled}-${playback.playing}`}
                       className="exhibit-cue-progress"
-                      style={{
-                        left: `${completed * 100}%`,
-                        width: `${100 / cueCount}%`,
-                        "--cue-duration": `${cue.durationMs}ms`,
-                      } as CSSProperties}
+                      style={
+                        {
+                          left: `${completed * 100}%`,
+                          width: `${100 / cueCount}%`,
+                          "--cue-duration": `${cue.durationMs}ms`,
+                        } as CSSProperties
+                      }
                     />
                   )}
                 </span>
                 <span className="exhibit-chapter-label">{item.label}</span>
-                <span className="exhibit-chapter-number" aria-hidden="true">{String(chapterIndex + 1).padStart(2, "0")}</span>
+                <span className="exhibit-chapter-number" aria-hidden="true">
+                  {String(chapterIndex + 1).padStart(2, "0")}
+                </span>
               </button>
             );
           })}
         </nav>
 
         <div className="exhibit-bottom-bar">
-          <div className="exhibit-loop-status">
-            <Repeat size={18} aria-hidden="true" />
-            <span>{playback.playing ? "On repeat" : "Paused"}</span>
-            <span className="exhibit-runtime">About {Math.round(EXHIBIT_DURATION_MS / 60000)} min</span>
+          <div className="exhibit-bottom-info">
+            <label className="exhibit-voice-select-wrap">
+              <span>Narration voice</span>
+              <select
+                className="exhibit-voice-select"
+                aria-label="Narration voice"
+                value={selectedVoice?.voiceURI ?? ""}
+                disabled={!canSpeak || availableVoices.length === 0}
+                onChange={(event) => setSelectedVoiceURI(event.target.value)}
+              >
+                {availableVoices.length === 0 ? (
+                  <option value="">No English voices available</option>
+                ) : (
+                  availableVoices.map((voice) => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name} ({voice.lang})
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
+            <div className="exhibit-loop-status">
+              <Repeat size={18} aria-hidden="true" />
+              <span>{playback.playing ? "On repeat" : "Paused"}</span>
+              <span className="exhibit-runtime">
+                About {Math.round(EXHIBIT_DURATION_MS / 60000)} min
+              </span>
+            </div>
           </div>
-          <div className="exhibit-controls" role="group" aria-label="Presentation controls">
-            <button type="button" className="exhibit-icon-button" onClick={() => moveChapter(-1)} aria-label="Previous chapter" title="Previous chapter">
+          <div
+            className="exhibit-controls"
+            role="group"
+            aria-label="Presentation controls"
+          >
+            <button
+              type="button"
+              className="exhibit-icon-button"
+              onClick={() => moveChapter(-1)}
+              aria-label="Previous chapter"
+              title="Previous chapter"
+            >
               <ArrowLeft size={20} aria-hidden="true" />
             </button>
-            <button type="button" className="exhibit-icon-button exhibit-play" onClick={() => dispatch({ type: "toggle-playing" })} aria-label={playback.playing ? "Pause presentation" : "Play presentation"} title={playback.playing ? "Pause presentation" : "Play presentation"}>
-              {playback.playing ? <Pause size={20} weight="fill" aria-hidden="true" /> : <Play size={20} weight="fill" aria-hidden="true" />}
+            <button
+              type="button"
+              className="exhibit-icon-button exhibit-play"
+              onClick={() => dispatch({ type: "toggle-playing" })}
+              aria-label={
+                playback.playing ? "Pause presentation" : "Play presentation"
+              }
+              title={
+                playback.playing ? "Pause presentation" : "Play presentation"
+              }
+            >
+              {playback.playing ? (
+                <Pause size={20} weight="fill" aria-hidden="true" />
+              ) : (
+                <Play size={20} weight="fill" aria-hidden="true" />
+              )}
             </button>
-            <button type="button" className="exhibit-icon-button" onClick={() => moveChapter(1)} aria-label="Next chapter" title="Next chapter">
+            <button
+              type="button"
+              className="exhibit-icon-button"
+              onClick={() => moveChapter(1)}
+              aria-label="Next chapter"
+              title="Next chapter"
+            >
               <ArrowRight size={20} aria-hidden="true" />
             </button>
             <span className="exhibit-control-divider" />
-            <button type="button" className="exhibit-icon-button" onClick={() => dispatch({ type: "restart" })} aria-label="Restart presentation" title="Restart presentation">
+            <button
+              type="button"
+              className="exhibit-icon-button"
+              onClick={() => dispatch({ type: "restart" })}
+              aria-label="Restart presentation"
+              title="Restart presentation"
+            >
               <ArrowCounterClockwise size={20} aria-hidden="true" />
             </button>
             <button
@@ -324,21 +510,52 @@ export function ExhibitMode() {
               aria-label={voiceEnabled ? "Mute narration" : "Enable narration"}
               aria-pressed={voiceEnabled}
               disabled={!canSpeak}
-              title={canSpeak ? (voiceEnabled ? "Mute narration" : "Enable narration") : "Speech is not supported in this browser"}
+              title={
+                canSpeak
+                  ? voiceEnabled
+                    ? "Mute narration"
+                    : "Enable narration"
+                  : "Speech is not supported in this browser"
+              }
               onClick={() => {
                 setNotice("");
                 setVoiceEnabled((enabled) => !enabled);
               }}
             >
-              {voiceEnabled ? <SpeakerHigh size={20} aria-hidden="true" /> : <SpeakerSlash size={20} aria-hidden="true" />}
+              {voiceEnabled ? (
+                <SpeakerHigh size={20} aria-hidden="true" />
+              ) : (
+                <SpeakerSlash size={20} aria-hidden="true" />
+              )}
               <span>{voiceEnabled ? "Voice on" : "Enable voice"}</span>
             </button>
-            <button type="button" className="exhibit-icon-button" onClick={() => void toggleFullscreen()} disabled={!canFullscreen} aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} title={canFullscreen ? (fullscreen ? "Exit fullscreen" : "Enter fullscreen") : "Fullscreen is not supported in this browser"}>
-              {fullscreen ? <ArrowsIn size={20} aria-hidden="true" /> : <ArrowsOut size={20} aria-hidden="true" />}
+            <button
+              type="button"
+              className="exhibit-icon-button"
+              onClick={() => void toggleFullscreen()}
+              disabled={!canFullscreen}
+              aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              title={
+                canFullscreen
+                  ? fullscreen
+                    ? "Exit fullscreen"
+                    : "Enter fullscreen"
+                  : "Fullscreen is not supported in this browser"
+              }
+            >
+              {fullscreen ? (
+                <ArrowsIn size={20} aria-hidden="true" />
+              ) : (
+                <ArrowsOut size={20} aria-hidden="true" />
+              )}
             </button>
           </div>
         </div>
-        {notice && <p className="exhibit-notice" role="status">{notice}</p>}
+        {notice && (
+          <p className="exhibit-notice" role="status">
+            {notice}
+          </p>
+        )}
       </footer>
     </main>
   );

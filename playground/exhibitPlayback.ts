@@ -64,7 +64,8 @@ export const EXHIBIT_CHAPTERS: readonly ExhibitChapter[] = [
         durationMs: 19000,
         aspectRatio: 1280 / 872,
         sourceSlide: 16,
-        narration: "Here is CARE capturing clinical information. Structured forms bring symptoms, conditions, medications, and other observations into the patient's record.",
+        narration:
+          "Here is CARE capturing clinical information. Structured forms bring symptoms, conditions, medications, and other observations into the patient's record.",
       },
       {
         src: "/exhibit-media/scheduling.mp4",
@@ -73,7 +74,8 @@ export const EXHIBIT_CHAPTERS: readonly ExhibitChapter[] = [
         durationMs: 33000,
         aspectRatio: 1280 / 868,
         sourceSlide: 17,
-        narration: "This scheduling demo connects clinician availability with appointment booking. Public facility pages help patients find a service and plan their visit.",
+        narration:
+          "This scheduling demo connects clinician availability with appointment booking. Public facility pages help patients find a service and plan their visit.",
       },
       {
         src: "/exhibit-media/pharmacy.mp4",
@@ -82,7 +84,8 @@ export const EXHIBIT_CHAPTERS: readonly ExhibitChapter[] = [
         durationMs: 17000,
         aspectRatio: 1280 / 868,
         sourceSlide: 23,
-        narration: "The patient journey continues at the pharmacy. CARE connects prescriptions, dispensing, and inventory so the care team can follow the same workflow.",
+        narration:
+          "The patient journey continues at the pharmacy. CARE connects prescriptions, dispensing, and inventory so the care team can follow the same workflow.",
       },
     ],
   },
@@ -90,7 +93,8 @@ export const EXHIBIT_CHAPTERS: readonly ExhibitChapter[] = [
     id: "everywhere",
     label: "Care beyond walls",
     title: "Care goes beyond hospital walls.",
-    description: "Specialist support. Community connections. Continuity of care.",
+    description:
+      "Specialist support. Community connections. Continuity of care.",
     points: ["TeleICU", "Community clinics", "Home-based care"],
     tone: "rose",
     expression: "happy",
@@ -107,7 +111,8 @@ export const EXHIBIT_CHAPTERS: readonly ExhibitChapter[] = [
         durationMs: 18000,
         aspectRatio: 16 / 9,
         sourceSlide: 31,
-        narration: "This is remote monitoring in CARE. Integrated camera views give remote care teams visual context alongside clinical information, supporting collaboration across locations.",
+        narration:
+          "This is remote monitoring in CARE. Integrated camera views give remote care teams visual context alongside clinical information, supporting collaboration across locations.",
       },
     ],
   },
@@ -146,7 +151,8 @@ export const EXHIBIT_CHAPTERS: readonly ExhibitChapter[] = [
         durationMs: 18000,
         aspectRatio: 16 / 9,
         sourceSlide: 46,
-        narration: "I have a job beyond this stage! The deck shows Filly helping turn a consultation into structured clinical documentation, ready for a healthcare professional to review.",
+        narration:
+          "I have a job beyond this stage! The deck shows Filly helping turn a consultation into structured clinical documentation, ready for a healthcare professional to review.",
       },
       {
         src: "/exhibit-media/doctor-summary.mp4",
@@ -155,7 +161,8 @@ export const EXHIBIT_CHAPTERS: readonly ExhibitChapter[] = [
         durationMs: 22000,
         aspectRatio: 1280 / 738,
         sourceSlide: 50,
-        narration: "The doctor-summary demo brings the patient's record into a brief before an encounter. It supports preparation, while the clinician reviews the information and makes the decisions.",
+        narration:
+          "The doctor-summary demo brings the patient's record into a brief before an encounter. It supports preparation, while the clinician reviews the information and makes the decisions.",
       },
     ],
   },
@@ -193,42 +200,61 @@ export function captionDuration(text: string): number {
   return Math.max(6000, text.trim().split(/\s+/).length * 430 + 1600);
 }
 
-export const EXHIBIT_CUES: readonly ExhibitCue[] = EXHIBIT_CHAPTERS.flatMap((chapter, chapterIndex) => [
-  ...chapter.narration.map((text) => ({ chapterIndex, text, durationMs: captionDuration(text) })),
-  ...(chapter.demos ?? []).map((media) => ({
-    chapterIndex,
-    text: media.narration,
-    durationMs: Math.max(captionDuration(media.narration), media.durationMs),
-    media,
-  })),
-],
+export const EXHIBIT_CUES: readonly ExhibitCue[] = EXHIBIT_CHAPTERS.flatMap(
+  (chapter, chapterIndex) => [
+    ...chapter.narration.map((text) => ({
+      chapterIndex,
+      text,
+      durationMs: captionDuration(text),
+    })),
+    ...(chapter.demos ?? []).map((media) => ({
+      chapterIndex,
+      text: media.narration,
+      durationMs: Math.max(captionDuration(media.narration), media.durationMs),
+      media,
+    })),
+  ],
 );
 
-export const EXHIBIT_DURATION_MS = EXHIBIT_CUES.reduce((total, cue) => total + cue.durationMs, 0);
+export const EXHIBIT_DURATION_MS = EXHIBIT_CUES.reduce(
+  (total, cue) => total + cue.durationMs,
+  0,
+);
 
 export interface ExhibitPlayback {
   cueIndex: number;
   playing: boolean;
 }
 
-export const INITIAL_EXHIBIT_PLAYBACK: ExhibitPlayback = { cueIndex: 0, playing: true };
+export const INITIAL_EXHIBIT_PLAYBACK: ExhibitPlayback = {
+  cueIndex: 0,
+  playing: true,
+};
 
 export type ExhibitAction =
   | { type: "advance" | "toggle-playing" | "restart" }
   | { type: "chapter"; chapterIndex: number };
 
-export function exhibitReducer(playback: ExhibitPlayback, action: ExhibitAction): ExhibitPlayback {
+export function exhibitReducer(
+  playback: ExhibitPlayback,
+  action: ExhibitAction,
+): ExhibitPlayback {
   switch (action.type) {
     case "advance":
       return playback.playing
-        ? { ...playback, cueIndex: (playback.cueIndex + 1) % EXHIBIT_CUES.length }
+        ? {
+            ...playback,
+            cueIndex: (playback.cueIndex + 1) % EXHIBIT_CUES.length,
+          }
         : playback;
     case "toggle-playing":
       return { ...playback, playing: !playback.playing };
     case "restart":
       return { ...INITIAL_EXHIBIT_PLAYBACK };
     case "chapter": {
-      const cueIndex = EXHIBIT_CUES.findIndex((cue) => cue.chapterIndex === action.chapterIndex);
+      const cueIndex = EXHIBIT_CUES.findIndex(
+        (cue) => cue.chapterIndex === action.chapterIndex,
+      );
       return cueIndex < 0 ? playback : { ...playback, cueIndex };
     }
   }
@@ -241,7 +267,25 @@ interface ExhibitCueOptions {
   speech?: {
     synthesis: Pick<SpeechSynthesis, "speak" | "cancel" | "getVoices">;
     createUtterance(text: string): SpeechSynthesisUtterance;
+    voice?: SpeechSynthesisVoice;
   };
+}
+
+const FEMININE_VOICE_NAME =
+  /\b(female|woman|samantha|ava|allison|susan|victoria|karen|moira|tessa|fiona|zira|aria|jenny)\b/i;
+
+export function chooseExhibitVoice(
+  voices: SpeechSynthesisVoice[],
+): SpeechSynthesisVoice | undefined {
+  const englishVoices = voices.filter((voice) => voice.lang.startsWith("en"));
+  return (
+    englishVoices.find((candidate) =>
+      FEMININE_VOICE_NAME.test(candidate.name),
+    ) ??
+    englishVoices.find((candidate) => candidate.default) ??
+    englishVoices.find((candidate) => candidate.localService) ??
+    englishVoices[0]
+  );
 }
 
 export function startExhibitCue(
@@ -294,10 +338,8 @@ export function startExhibitCue(
     onSpeakingChange(false);
     try {
       utterance = speech.createUtterance(cue.text);
-      const voices = speech.synthesis.getVoices().filter((voice) => voice.lang.startsWith("en"));
-      const voice = voices.find((candidate) => candidate.default)
-        ?? voices.find((candidate) => candidate.localService)
-        ?? voices[0];
+      const voice =
+        speech.voice ?? chooseExhibitVoice(speech.synthesis.getVoices());
       if (voice) utterance.voice = voice;
       utterance.lang = voice?.lang ?? "en";
       utterance.rate = 0.95;
@@ -311,7 +353,10 @@ export function startExhibitCue(
         if (stopped || finished || speechSettled) return;
         speechSettled = true;
         onSpeakingChange(false);
-        schedule(finish, Math.max(900, minimumDurationMs - (Date.now() - startedAt)));
+        schedule(
+          finish,
+          Math.max(900, minimumDurationMs - (Date.now() - startedAt)),
+        );
       };
       utterance.onerror = fallback;
       schedule(fallback, 3500);
@@ -330,7 +375,10 @@ export function startExhibitCue(
   };
 }
 
-export function startExhibitVideo(video: HTMLVideoElement, onUnavailable: () => void): () => void {
+export function startExhibitVideo(
+  video: HTMLVideoElement,
+  onUnavailable: () => void,
+): () => void {
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
 

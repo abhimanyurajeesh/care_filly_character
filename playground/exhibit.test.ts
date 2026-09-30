@@ -1,6 +1,14 @@
 import { existsSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EXHIBIT_CHAPTERS, EXHIBIT_CUES, exhibitReducer, INITIAL_EXHIBIT_PLAYBACK, startExhibitCue, startExhibitVideo } from "./exhibitPlayback";
+import {
+  chooseExhibitVoice,
+  EXHIBIT_CHAPTERS,
+  EXHIBIT_CUES,
+  exhibitReducer,
+  INITIAL_EXHIBIT_PLAYBACK,
+  startExhibitCue,
+  startExhibitVideo,
+} from "./exhibitPlayback";
 
 describe("exhibit playback", () => {
   it("automatically returns to the opening after every narration cue", () => {
@@ -17,20 +25,32 @@ describe("exhibit playback", () => {
   });
 
   it("does not advance while paused", () => {
-    const paused = exhibitReducer(INITIAL_EXHIBIT_PLAYBACK, { type: "toggle-playing" });
+    const paused = exhibitReducer(INITIAL_EXHIBIT_PLAYBACK, {
+      type: "toggle-playing",
+    });
     expect(paused.playing).toBe(false);
     expect(exhibitReducer(paused, { type: "advance" })).toEqual(paused);
-    expect(exhibitReducer(paused, { type: "toggle-playing" }).playing).toBe(true);
+    expect(exhibitReducer(paused, { type: "toggle-playing" }).playing).toBe(
+      true,
+    );
   });
 
   it("selects the first cue of a chapter without resuming paused playback", () => {
-    const playback = exhibitReducer({ cueIndex: 0, playing: false }, { type: "chapter", chapterIndex: 2 });
+    const playback = exhibitReducer(
+      { cueIndex: 0, playing: false },
+      { type: "chapter", chapterIndex: 2 },
+    );
     expect(playback.playing).toBe(false);
-    expect(EXHIBIT_CUES[playback.cueIndex]).toMatchObject({ chapterIndex: 2, text: EXHIBIT_CHAPTERS[2].narration[0] });
+    expect(EXHIBIT_CUES[playback.cueIndex]).toMatchObject({
+      chapterIndex: 2,
+      text: EXHIBIT_CHAPTERS[2].narration[0],
+    });
   });
 
   it("restarts the opening cue and resumes playback", () => {
-    expect(exhibitReducer({ cueIndex: 5, playing: false }, { type: "restart" })).toEqual(INITIAL_EXHIBIT_PLAYBACK);
+    expect(
+      exhibitReducer({ cueIndex: 5, playing: false }, { type: "restart" }),
+    ).toEqual(INITIAL_EXHIBIT_PLAYBACK);
   });
 
   it("includes locally bundled deck recordings with matching posters and enough display time", () => {
@@ -39,8 +59,12 @@ describe("exhibit playback", () => {
     for (const cue of demoCues) {
       const media = cue.media!;
       expect(media.src).toMatch(/^\/exhibit-media\/.+\.mp4$/);
-      expect(existsSync(new URL(`./public${media.src}`, import.meta.url))).toBe(true);
-      expect(existsSync(new URL(`./public${media.poster}`, import.meta.url))).toBe(true);
+      expect(existsSync(new URL(`./public${media.src}`, import.meta.url))).toBe(
+        true,
+      );
+      expect(
+        existsSync(new URL(`./public${media.poster}`, import.meta.url)),
+      ).toBe(true);
       expect(cue.durationMs).toBeGreaterThanOrEqual(media.durationMs);
       expect(media.sourceSlide).toBeGreaterThan(0);
     }
@@ -53,13 +77,28 @@ describe("exhibit narration", () => {
 
   const cue = EXHIBIT_CUES[0];
   function callbacks() {
-    return { onFinish: vi.fn(), onSpeakingChange: vi.fn(), onVoiceUnavailable: vi.fn() };
+    return {
+      onFinish: vi.fn(),
+      onSpeakingChange: vi.fn(),
+      onVoiceUnavailable: vi.fn(),
+    };
   }
 
-  function speechEngine() {
-    const utterance = { onstart: null, onend: null, onerror: null } as unknown as SpeechSynthesisUtterance;
-    const synthesis = { speak: vi.fn(), cancel: vi.fn(), getVoices: () => [] };
-    return { utterance, speech: { synthesis, createUtterance: () => utterance } };
+  function speechEngine(voices: SpeechSynthesisVoice[] = []) {
+    const utterance = {
+      onstart: null,
+      onend: null,
+      onerror: null,
+    } as unknown as SpeechSynthesisUtterance;
+    const synthesis = {
+      speak: vi.fn(),
+      cancel: vi.fn(),
+      getVoices: () => voices,
+    };
+    return {
+      utterance,
+      speech: { synthesis, createUtterance: () => utterance },
+    };
   }
 
   it("advances captions automatically without a speech engine", () => {
@@ -119,6 +158,70 @@ describe("exhibit narration", () => {
     stop();
   });
 
+  it("prefers an available feminine voice over the system default", () => {
+    const events = callbacks();
+    const defaultVoice = {
+      name: "Alex",
+      lang: "en-US",
+      default: true,
+      localService: true,
+    } as SpeechSynthesisVoice;
+    const feminineVoice = {
+      name: "Samantha",
+      lang: "en-US",
+      default: false,
+      localService: true,
+    } as SpeechSynthesisVoice;
+    const { utterance, speech } = speechEngine([defaultVoice, feminineVoice]);
+    const stop = startExhibitCue(cue, { ...events, speech });
+
+    expect(utterance.voice).toBe(feminineVoice);
+    stop();
+  });
+
+  it("uses the voice explicitly selected in the voice picker", () => {
+    const events = callbacks();
+    const defaultVoice = {
+      name: "Alex",
+      lang: "en-US",
+      default: true,
+      localService: true,
+    } as SpeechSynthesisVoice;
+    const feminineVoice = {
+      name: "Samantha",
+      lang: "en-US",
+      default: false,
+      localService: true,
+    } as SpeechSynthesisVoice;
+    const { utterance, speech } = speechEngine([defaultVoice, feminineVoice]);
+    const stop = startExhibitCue(cue, {
+      ...events,
+      speech: { ...speech, voice: defaultVoice },
+    });
+
+    expect(utterance.voice).toBe(defaultVoice);
+    stop();
+  });
+
+  it("ignores non-English voices when choosing the preferred narration voice", () => {
+    const defaultVoice = {
+      name: "Alex",
+      lang: "en-US",
+      default: true,
+      localService: true,
+    } as SpeechSynthesisVoice;
+    const nonEnglishFemaleVoice = {
+      name: "Samantha",
+      lang: "fr-FR",
+      default: false,
+      localService: true,
+    } as SpeechSynthesisVoice;
+
+    expect(chooseExhibitVoice([nonEnglishFemaleVoice, defaultVoice])).toBe(
+      defaultVoice,
+    );
+  });
+
   it("falls back to captions if speech never starts", () => {
     const events = callbacks();
     const { speech } = speechEngine();
@@ -149,7 +252,9 @@ describe("exhibit video playback", () => {
   function videoElement() {
     const video = new EventTarget();
     return Object.assign(video, {
-      play: vi.fn(async () => { video.dispatchEvent(new Event("playing")); }),
+      play: vi.fn(async () => {
+        video.dispatchEvent(new Event("playing"));
+      }),
       pause: vi.fn(),
     }) as unknown as HTMLVideoElement;
   }
@@ -185,7 +290,9 @@ describe("exhibit video playback", () => {
 
   it("ignores a rejected play request after cleanup", async () => {
     const video = videoElement();
-    vi.mocked(video.play).mockRejectedValue(new Error("Playback was interrupted"));
+    vi.mocked(video.play).mockRejectedValue(
+      new Error("Playback was interrupted"),
+    );
     const unavailable = vi.fn();
     const stop = startExhibitVideo(video, unavailable);
     stop();

@@ -264,6 +264,9 @@ For a local production build, run `npm ci && npm run build:playground`. Build ou
 is generated locally or by Cloudflare and is not committed to the repository. The
 custom domain uses a Cloudflare-managed CNAME from `mascot` to
 `care-filly-character.pages.dev`. The site needs no runtime secrets or server.
+When Cloudflare Pages pull-request previews are enabled, open the exhibit by
+appending `/exhibit` to the preview URL. The GitHub Actions workflow builds and
+checks the site; Cloudflare Pages creates the preview deployment.
 
 ### Site metadata and sharing
 

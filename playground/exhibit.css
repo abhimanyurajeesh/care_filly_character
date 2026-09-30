@@ -62,8 +62,13 @@
 .exhibit-chapter-track > .exhibit-cue-progress { right: auto; animation: exhibit-progress var(--cue-duration) linear both; }
 .exhibit[data-playing="false"] .exhibit-cue-progress { animation-play-state: paused; }
 .exhibit-bottom-bar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 13px; }
+.exhibit-bottom-info { display: flex; align-items: center; gap: 20px; min-width: 0; }
 .exhibit-loop-status { display: inline-flex; align-items: center; gap: 9px; color: var(--exhibit-muted); font-size: 12px; }
 .exhibit-runtime { padding-left: 12px; margin-left: 3px; border-left: 1px solid var(--exhibit-line); }
+.exhibit-voice-select-wrap { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--exhibit-muted); font-size: 12px; white-space: nowrap; }
+.exhibit-voice-select { width: 150px; max-width: 100%; height: 34px; padding: 0 28px 0 9px; overflow: hidden; color: var(--exhibit-ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; border: 1px solid var(--exhibit-line); border-radius: 6px; background: transparent; }
+.exhibit-voice-select:hover:not(:disabled), .exhibit-voice-select:focus-visible { border-color: var(--exhibit-accent); }
+.exhibit-voice-select:disabled { opacity: .55; }
 .exhibit-controls { display: flex; align-items: center; gap: 8px; }
 .exhibit-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border: 0; border-radius: 50%; background: transparent; }
 .exhibit-icon-button:hover:not(:disabled) { background: var(--exhibit-soft); }
@@ -142,8 +147,11 @@
   .exhibit-chapter-label { display: none; }
   .exhibit-chapter-number { display: block; text-align: center; font-size: 10px; font-variant-numeric: tabular-nums; color: var(--exhibit-muted); margin-top: 7px; }
   .exhibit-chapter[aria-current] .exhibit-chapter-number { color: var(--exhibit-accent); font-weight: 700; }
-  .exhibit-bottom-bar { justify-content: center; gap: 0; margin-top: 9px; }
+  .exhibit-bottom-bar { flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 9px; }
+  .exhibit-bottom-info { width: 100%; }
   .exhibit-loop-status { display: none; }
+  .exhibit-voice-select-wrap { width: 100%; gap: 8px; }
+  .exhibit-voice-select { width: 150px; height: 34px; }
   .exhibit-controls { width: 100%; justify-content: space-between; gap: 2px; }
   .exhibit-icon-button { width: 36px; height: 36px; }
   .exhibit-control-divider { margin: 0 3px; }
