@@ -38,6 +38,7 @@ button { cursor: pointer; }
   justify-content: space-between;
 }
 .studio-header { min-height: 98px; }
+.studio-nav { display: flex; align-items: center; gap: 20px; }
 .studio-brand {
   display: inline-flex;
   align-items: center;
@@ -56,6 +57,7 @@ button { cursor: pointer; }
   font-weight: 500;
   text-decoration: none;
 }
+.exhibit-nav-button { padding: 0; border: 0; color: inherit; background: transparent; cursor: pointer; font-family: inherit; }
 .sheet-link svg { flex-shrink: 0; transition: transform .2s ease; }
 .sheet-link:hover svg { transform: translate(2px, -2px); }
 .character-studio { text-align: center; padding-top: 21px; }
@@ -158,7 +160,9 @@ button { cursor: pointer; }
 }
 @media (max-width: 560px) {
   .pg { padding: 0 20px; overflow: hidden; }
-  .studio-header { min-height: 76px; }
+  .studio-header { min-height: 76px; gap: 12px; }
+  .studio-nav { flex-wrap: wrap; justify-content: flex-end; gap: 6px 10px; }
+  .studio-nav .sheet-link { font-size: 10px; gap: 4px; }
   .studio-brand { font-size: 18px; gap: 11px; }
   .care-wordmark { font-size: 13px; }
   .sheet-link { font-size: 11px; gap: 5px; }

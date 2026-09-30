@@ -7,7 +7,7 @@ import { SHEET_FRAMES, type SheetFrame } from "./frames";
 import { useFps, useMicLevel } from "./useAudio";
 import { ExpressionIcon } from "./ExpressionIcon";
 
-export function InteractiveMode() {
+export function InteractiveMode({ onOpenExhibit }: { onOpenExhibit(): void }) {
   const ref = useRef<FillyCharacterHandle>(null);
   const [state, setState] = useState<FillyState>("idle");
   const [expression, setExpression] = useState<SheetFrame["id"]>("idle");
@@ -46,9 +46,14 @@ export function InteractiveMode() {
           <span className="brand-divider" />
           <span>Filly</span>
         </a>
-        <a className="sheet-link" href="?sheet=1">
-          Expression sheet <ArrowUpRight size={18} aria-hidden="true" />
-        </a>
+        <nav className="studio-nav" aria-label="Playground views">
+          <button className="sheet-link exhibit-nav-button" type="button" onClick={onOpenExhibit}>
+            Visit the exhibit <ArrowUpRight size={18} aria-hidden="true" />
+          </button>
+          <a className="sheet-link" href="?sheet=1">
+            Expression sheet <ArrowUpRight size={18} aria-hidden="true" />
+          </a>
+        </nav>
       </header>
 
       <section className="character-studio" aria-labelledby="studio-title">

@@ -22,4 +22,11 @@ describe("playground routing", () => {
     vi.stubGlobal("window", { location: { pathname: "/", search: "?state=happy&t=1" } });
     expect(renderToStaticMarkup(createElement(App))).toContain('class="frame"');
   });
+
+  it("shows a button for soft navigation to the exhibit", () => {
+    vi.stubGlobal("window", { location: { pathname: "/", search: "" } });
+    const html = renderToStaticMarkup(createElement(App));
+    expect(html).toContain('class="sheet-link exhibit-nav-button"');
+    expect(html).toContain("Visit the exhibit");
+  });
 });

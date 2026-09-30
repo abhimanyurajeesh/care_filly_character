@@ -5,6 +5,7 @@
  *  - ?sheet=1           all 8 sheet frames in a 4×2 grid (compare with the reference)
  *  - ?export=1          exposes window.__fillyExportGLB() for scripts/export-glb.mts
  */
+import { useEffect, useState } from "react";
 import { isFillyState } from "../src/core/types";
 import { ExhibitMode } from "./ExhibitMode";
 import { ExportMode } from "./ExportMode";
@@ -20,7 +21,22 @@ function num(v: string | null, fallback: number): number {
 }
 
 export function App() {
-  if (/^\/exhibit\/?$/.test(window.location.pathname)) return <ExhibitMode />;
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+
+  useEffect(() => {
+    const onPopState = () => setPathname(window.location.pathname);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  function navigate(path: string) {
+    window.history.pushState(null, "", path);
+    setPathname(path);
+  }
+
+  if (/^\/exhibit\/?$/.test(pathname)) {
+    return <ExhibitMode onNavigateHome={() => navigate("/")} />;
+  }
   const params = new URLSearchParams(window.location.search);
   if (params.get("social") === "1") return <SocialPreviewMode />;
   if (params.get("export") === "1") return <ExportMode />;
@@ -41,5 +57,5 @@ export function App() {
       />
     );
   }
-  return <InteractiveMode />;
+  return <InteractiveMode onOpenExhibit={() => navigate("/exhibit")} />;
 }

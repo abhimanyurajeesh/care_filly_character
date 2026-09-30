@@ -73,7 +73,7 @@ function ExhibitVideo({
   );
 }
 
-export function ExhibitMode() {
+export function ExhibitMode({ onNavigateHome }: { onNavigateHome(): void }) {
   const rootRef = useRef<HTMLElement>(null);
   const [playback, dispatch] = useReducer(
     exhibitReducer,
@@ -252,7 +252,15 @@ export function ExhibitMode() {
       data-cue-index={playback.cueIndex}
     >
       <header className="exhibit-header">
-        <a className="exhibit-brand" href="/" aria-label="CARE mascot studio">
+        <a
+          className="exhibit-brand"
+          href="/"
+          aria-label="CARE mascot studio"
+          onClick={(event) => {
+            event.preventDefault();
+            onNavigateHome();
+          }}
+        >
           <img src="/favicon.svg" width="36" height="36" alt="" />
           <span>CARE</span>
         </a>
